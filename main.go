@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: geoipgo <IP_ADDRESS>")
+		fmt.Println("Usage: iplookup <IP_ADDRESS>")
 		os.Exit(1)
 	}
 
@@ -24,7 +24,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Database error: %v (Ensure GeoLite2-Country.mmdb exists)", err)
 	}
-	defer db.Close()
+	defer func(db *geoip2.Reader) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("Database error: %v (Ensure GeoLite2-Country.mmdb exists)", err)
+		}
+	}(db)
 
 	country, err := db.Country(ip)
 	if err != nil {
