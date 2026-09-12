@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/oschwald/geoip2-golang"
 	"log"
-	"net"
+	"net/netip"
 	"os"
+
+	"github.com/oschwald/geoip2-golang/v2"
 )
 
 func main() {
@@ -15,8 +16,8 @@ func main() {
 	}
 
 	ipAddress := os.Args[1]
-	ip := net.ParseIP(ipAddress)
-	if ip == nil {
+	ip, err := netip.ParseAddr(ipAddress)
+	if err != nil {
 		log.Fatalf("Invalid IP address: %s", ipAddress)
 	}
 
@@ -37,7 +38,7 @@ func main() {
 	}
 
 	fmt.Printf("Country: %s (ISO: %s)\n",
-		country.Country.Names["en"],
-		country.Country.IsoCode,
+		country.Country.Names.English,
+		country.Country.ISOCode,
 	)
 }
