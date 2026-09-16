@@ -13,7 +13,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfg, err := LoadConfig("config.kdl")
+	cfg, err := LoadOrCreateConfig("config.kdl")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
