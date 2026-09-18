@@ -15,11 +15,15 @@ Create or update `config.kdl` in the root directory:
 
 ```kdl
 maxmind {
+    account-id "YOUR_ACCOUNT_ID"
+    license-key "YOUR_LICENSE_KEY"
     db-path "."
 }
 ```
 
-- `db-path`: The directory path where the `GeoLite2-Country.mmdb` and `GeoLite2-ASN.mmdb` database files are located.
+- `account-id`: Your MaxMind account ID. Required for `iplookup update`.
+- `license-key`: Your MaxMind license key. Required for `iplookup update`.
+- `db-path`: Directory that contains `GeoLite2-Country.mmdb` and `GeoLite2-ASN.mmdb`.
 
 ## Usage
 
@@ -27,6 +31,7 @@ maxmind {
 
 ```sh
 go run . <IP_ADDRESS>
+go run . update
 ```
 
 Example:
@@ -50,6 +55,7 @@ To build binaries locally:
 ```sh
 go build -o iplookup
 ./iplookup <IP_ADDRESS>
+./iplookup update
 ```
 
 Or run the cross-compilation script:
