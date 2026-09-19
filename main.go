@@ -65,7 +65,7 @@ func updateDatabases(cfg *Config) error {
 }
 
 func lookupIP(cfg *Config, ipAddress string) error {
-	svc, err := NewLookService(
+	svc, err := NewLookupService(
 		mmdbPath(cfg, editionCountry),
 		mmdbPath(cfg, editionCity),
 		mmdbPath(cfg, editionASN),
