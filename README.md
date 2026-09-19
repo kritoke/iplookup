@@ -1,18 +1,22 @@
 # iplookup
 
-A command-line tool written in Go to look up country, city, and organization (ASN) information for an IP address using MaxMind GeoLite2 databases.
+A command-line tool written in Go to look up country, city, and organization (ASN) information for an IP address or hostname using MaxMind GeoLite2 databases.
+
+Hostnames are resolved with `LookupNetIP`. The first address is used, and the result is shown as `IP (hostname)`.
 
 ## Prerequisites
 
-- Go 1.20+ (or compatible version)
+- Go 1.27+
 - MaxMind GeoLite2 database files:
   - `GeoLite2-Country.mmdb`
   - `GeoLite2-City.mmdb`
   - `GeoLite2-ASN.mmdb`
 
+If the databases are missing, run `iplookup update`.
+
 ## Configuration
 
-Create or update `config.kdl` in the root directory:
+Create or update `config.kdl` in the working directory. A default file is created on first run if it does not exist:
 
 ```kdl
 maxmind {
@@ -28,20 +32,21 @@ maxmind {
 
 ## Usage
 
+```sh
+iplookup <IP_OR_HOSTNAME>
+iplookup update
+iplookup help
+```
+
 ### Run Directly
 
 ```sh
-go run . <IP_ADDRESS>
+go run . 8.8.8.8
+go run . dns.google
 go run . update
 ```
 
-Example:
-
-```sh
-go run . 8.8.8.8
-```
-
-Output:
+IP lookup:
 
 ```text
 IP Address: 8.8.8.8
@@ -50,13 +55,22 @@ City:
 Organization: Google LLC
 ```
 
-### Build
+Hostname lookup:
 
-To build binaries locally:
+```text
+IP Address: 8.8.8.8 (dns.google)
+Country: United States
+City:
+Organization: Google LLC
+```
+
+City is often empty. Anycast and similar IPs may report the ISP's registered country when no geolocated country is present.
+
+### Build
 
 ```sh
 go build -o iplookup
-./iplookup <IP_ADDRESS>
+./iplookup 8.8.8.8
 ./iplookup update
 ```
 
