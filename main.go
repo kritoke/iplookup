@@ -5,7 +5,20 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+const (
+	editionCountry = "GeoLite2-Country"
+	editionCity    = "GeoLite2-City"
+	editionASN     = "GeoLite2-ASN"
+)
+
+var geoLiteEditions = []string{editionCountry, editionCity, editionASN}
+
+func mmdbPath(cfg *Config, edition string) string {
+	return filepath.Join(cfg.MaxMind.DbPath, edition+".mmdb")
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -40,41 +53,29 @@ func prompt() {
 func updateDatabases(cfg *Config) error {
 	accountID := cfg.MaxMind.AccountID
 	licenseKey := cfg.MaxMind.LicenseKey
-	countryPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-Country.mmdb")
-	cityPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-City.mmdb")
-	asnPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-ASN.mmdb")
 
-	if err := UpdateMaxMindGeoLite2(accountID, licenseKey, "GeoLite2-Country", countryPath); err != nil {
-		return fmt.Errorf("update country database: %w", err)
+	for _, edition := range geoLiteEditions {
+		if err := UpdateMaxMindGeoLite2(accountID, licenseKey, edition, mmdbPath(cfg, edition)); err != nil {
+			return fmt.Errorf("update %s database: %w", edition, err)
+		}
 	}
 
-	if err := UpdateMaxMindGeoLite2(accountID, licenseKey, "GeoLite2-City", cityPath); err != nil {
-		return fmt.Errorf("update City database: %w", err)
-	}
-
-	if err := UpdateMaxMindGeoLite2(accountID, licenseKey, "GeoLite2-ASN", asnPath); err != nil {
-		return fmt.Errorf("update ASN database: %w", err)
-	}
-
-	fmt.Println("Updated GeoLite2-Country, GeoLite2-City and GeoLite2-ASN databases")
+	fmt.Printf("Updated %s databases\n", strings.Join(geoLiteEditions, ", "))
 	return nil
 }
 
 func lookupIP(cfg *Config, ipAddress string) error {
-	countryPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-Country.mmdb")
-	cityPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-City.mmdb")
-	asnPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-ASN.mmdb")
-
-	svc, err := NewLookService(countryPath, cityPath, asnPath)
+	svc, err := NewLookService(
+		mmdbPath(cfg, editionCountry),
+		mmdbPath(cfg, editionCity),
+		mmdbPath(cfg, editionASN),
+	)
 	if err != nil {
 		return fmt.Errorf("database error: %w (ensure GeoLite2 databases exist; try: iplookup update)", err)
 	}
 	defer svc.Close()
 
-	result, err := svc.Lookup(ipAddress)
-	if err != nil {
-		return fmt.Errorf("invalid IP address: %s", ipAddress)
-	}
+	result := svc.Lookup(ipAddress)
 
 	fmt.Printf("IP Address: %s\nCountry: %s\nCity: %s\nOrganization: %s\n",
 		result.IP,
