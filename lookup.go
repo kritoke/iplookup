@@ -10,17 +10,24 @@ import (
 type LookupResult struct {
 	IP      string `json:"ip"`
 	Country string `json:"country"`
+	City    string `json:"city"`
 	ASN     uint   `json:"asn"`
 	Org     string `json:"org"`
 }
 
 type LookupService struct {
 	countryDB *geoip2.Reader
+	cityDB    *geoip2.Reader
 	asnDB     *geoip2.Reader
 }
 
-func NewLookService(countryPath, asnPath string) (*LookupService, error) {
+func NewLookService(countryPath, cityPath, asnPath string) (*LookupService, error) {
 	country, err := geoip2.Open(countryPath)
+	if err != nil {
+		return nil, err
+	}
+
+	city, err := geoip2.Open(cityPath)
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +43,7 @@ func NewLookService(countryPath, asnPath string) (*LookupService, error) {
 
 	return &LookupService{
 		countryDB: country,
+		cityDB:    city,
 		asnDB:     asn,
 	}, nil
 }
@@ -46,12 +54,17 @@ func (s *LookupService) Lookup(ipString string) (*LookupResult, error) {
 	if err != nil {
 		log.Fatalf("Invalid IP address: %s", ip)
 	}
+	cityRecord, err := s.cityDB.City(ip)
+	if err != nil {
+		log.Fatalf("Invalid IP address: %s", ip)
+	}
 
 	asnRecord, _ := s.asnDB.ASN(ip) // Non-fatal if ASN not set
 
 	result := &LookupResult{
 		IP:      ipString,
 		Country: countryRecord.Country.Names.English,
+		City:    cityRecord.City.Names.English,
 	}
 
 	if asnRecord != nil {
@@ -62,7 +75,7 @@ func (s *LookupService) Lookup(ipString string) (*LookupResult, error) {
 	return result, nil
 }
 
-// Close ensures both databases release their memory maps and file handles
+// Close ensures all three databases release their memory maps and file handles
 func (s *LookupService) Close() error {
 	var firstErr error
 	if s.countryDB != nil {
@@ -70,6 +83,13 @@ func (s *LookupService) Close() error {
 			firstErr = err
 		}
 	}
+
+	if s.cityDB != nil {
+		if err := s.cityDB.Close(); err != nil {
+			firstErr = err
+		}
+	}
+
 	if s.asnDB != nil {
 		if err := s.asnDB.Close(); err != nil {
 			firstErr = err

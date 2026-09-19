@@ -41,24 +41,31 @@ func updateDatabases(cfg *Config) error {
 	accountID := cfg.MaxMind.AccountID
 	licenseKey := cfg.MaxMind.LicenseKey
 	countryPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-Country.mmdb")
+	cityPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-City.mmdb")
 	asnPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-ASN.mmdb")
 
 	if err := UpdateMaxMindGeoLite2(accountID, licenseKey, "GeoLite2-Country", countryPath); err != nil {
 		return fmt.Errorf("update country database: %w", err)
 	}
+
+	if err := UpdateMaxMindGeoLite2(accountID, licenseKey, "GeoLite2-City", cityPath); err != nil {
+		return fmt.Errorf("update City database: %w", err)
+	}
+
 	if err := UpdateMaxMindGeoLite2(accountID, licenseKey, "GeoLite2-ASN", asnPath); err != nil {
 		return fmt.Errorf("update ASN database: %w", err)
 	}
 
-	fmt.Println("Updated GeoLite2-Country and GeoLite2-ASN databases")
+	fmt.Println("Updated GeoLite2-Country, GeoLite2-City and GeoLite2-ASN databases")
 	return nil
 }
 
 func lookupIP(cfg *Config, ipAddress string) error {
 	countryPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-Country.mmdb")
+	cityPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-City.mmdb")
 	asnPath := filepath.Join(cfg.MaxMind.DbPath, "GeoLite2-ASN.mmdb")
 
-	svc, err := NewLookService(countryPath, asnPath)
+	svc, err := NewLookService(countryPath, cityPath, asnPath)
 	if err != nil {
 		return fmt.Errorf("database error: %w (ensure GeoLite2 databases exist; try: iplookup update)", err)
 	}
@@ -69,9 +76,10 @@ func lookupIP(cfg *Config, ipAddress string) error {
 		return fmt.Errorf("invalid IP address: %s", ipAddress)
 	}
 
-	fmt.Printf("IP Address: %s\nCountry: %s\nOrganization: %s\n",
+	fmt.Printf("IP Address: %s\nCountry: %s\nCity: %s\nOrganization: %s\n",
 		result.IP,
 		result.Country,
+		result.City,
 		result.Org,
 	)
 	return nil
